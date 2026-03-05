@@ -10,9 +10,8 @@ import {
 } from 'react-icons/fa';
 import './App.css';
 
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://esakay-gensan-final.onrender.com/api'
-  : 'http://localhost:5000/api';
+// Palitan ang lines 13-15 nito:
+const API_BASE = 'https://esakay-gensan-final.onrender.com/api';
   
 // ==========================================
 // 1. LOGIN PAGE
