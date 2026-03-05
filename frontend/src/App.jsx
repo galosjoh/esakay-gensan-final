@@ -6,7 +6,7 @@ import {
   FaBell, FaUser, FaGoogle, FaEnvelope, FaLock, FaEye, FaArrowLeft, 
   FaTicketAlt, FaBolt, FaSignOutAlt, FaThumbsUp, FaComment, FaPaperPlane,
   FaCreditCard, FaBus, FaMotorcycle, FaCar, FaExclamationTriangle, FaShareAlt, FaStar, FaFileAlt,
-  FaPhone, FaMapPin, FaClock, FaChevronRight, FaAlertCircle, FaCheckCircle, FaTimesCircle
+  FaPhone, FaMapPin, FaClock, FaChevronRight, FaExclamationCircle, FaCheckCircle, FaTimesCircle
 } from 'react-icons/fa';
 import './App.css';
 
