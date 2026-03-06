@@ -3,20 +3,24 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: [true, 'Name is required'],
+    trim: true
   },
   email: {
     type: String,
-    required: true,
-    unique: true
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true,
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email']
   },
   password: {
     type: String,
-    required: true
+    required: [true, 'Password is required'],
+    minlength: 6
   },
   mobile: {
     type: String,
-    required: true
+    required: [true, 'Mobile number is required']
   },
   role: {
     type: String,
@@ -28,6 +32,10 @@ const userSchema = new mongoose.Schema({
     default: false
   },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
