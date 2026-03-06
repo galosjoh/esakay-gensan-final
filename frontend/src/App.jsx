@@ -5,6 +5,11 @@ import './App.css';
 
 const API_URL = 'https://esakay-gensan-final.onrender.com/api';
 
+console.log('✅ App loaded with API URL:', API_URL);
+console.log('✅ Axios baseURL:', API_URL);
+
+axios.defaults.baseURL = API_URL;
+
 // ===== LOGIN PAGE WITH REGISTER =====
 const Login = () => {
   const [showRegister, setShowRegister] = useState(false);
