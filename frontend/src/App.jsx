@@ -5,20 +5,20 @@ import './App.css';
 
 const API_URL = 'https://esakay-gensan-final.onrender.com/api';
 
-// ===== LOGIN PAGE =====
+// ===== LOGIN PAGE WITH REGISTER =====
 const Login = () => {
+  const [showRegister, setShowRegister] = useState(false);
   const [email, setEmail] = useState('admin@esakay.com');
   const [password, setPassword] = useState('admin12345');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    mobile: '',
-    userType: 'user'
-  });
+  
+  // Register form
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regMobile, setRegMobile] = useState('');
+  const [regType, setRegType] = useState('user');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,7 +26,11 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password
+      });
+
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
@@ -36,7 +40,8 @@ const Login = () => {
         window.location.href = '/home';
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
       setLoading(false);
     }
   };
@@ -46,18 +51,36 @@ const Login = () => {
     setLoading(true);
     setError('');
 
+    if (!regName || !regEmail || !regPassword || !regMobile) {
+      setError('All fields are required');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await axios.post(`${API_URL}/auth/register`, formData);
-      alert('✅ Registration successful! Wait for admin approval.');
-      setIsRegistering(false);
-      setFormData({ name: '', email: '', password: '', mobile: '', userType: 'user' });
+      await axios.post(`${API_URL}/auth/register`, {
+        name: regName,
+        email: regEmail,
+        password: regPassword,
+        mobile: regMobile,
+        userType: regType
+      });
+
+      alert('✅ Registration successful!\nWait for admin approval. Check your email for updates.');
+      setShowRegister(false);
+      setRegName('');
+      setRegEmail('');
+      setRegPassword('');
+      setRegMobile('');
+      setLoading(false);
     } catch (err) {
+      console.error('Register error:', err);
       setError(err.response?.data?.message || 'Registration failed');
       setLoading(false);
     }
   };
 
-  if (isRegistering) {
+  if (showRegister) {
     return (
       <div className="login-page">
         <div className="login-container">
@@ -76,9 +99,8 @@ const Login = () => {
                 <input
                   type="text"
                   placeholder="Juan Dela Cruz"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  required
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
                   className="form-input"
                 />
               </div>
@@ -88,9 +110,8 @@ const Login = () => {
                 <input
                   type="email"
                   placeholder="your@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  required
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
                   className="form-input"
                 />
               </div>
@@ -99,10 +120,9 @@ const Login = () => {
                 <label>Password</label>
                 <input
                   type="password"
-                  placeholder="Min 6 characters"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  required
+                  placeholder="At least 6 characters"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
                   className="form-input"
                 />
               </div>
@@ -112,9 +132,8 @@ const Login = () => {
                 <input
                   type="tel"
                   placeholder="09xxxxxxxxx"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({...formData, mobile: e.target.value})}
-                  required
+                  value={regMobile}
+                  onChange={(e) => setRegMobile(e.target.value)}
                   className="form-input"
                 />
               </div>
@@ -122,22 +141,22 @@ const Login = () => {
               <div className="form-group">
                 <label>Account Type</label>
                 <select
-                  value={formData.userType}
-                  onChange={(e) => setFormData({...formData, userType: e.target.value})}
+                  value={regType}
+                  onChange={(e) => setRegType(e.target.value)}
                   className="form-input"
                 >
-                  <option value="user">Passenger</option>
-                  <option value="driver">Driver</option>
+                  <option value="user">👤 Passenger</option>
+                  <option value="driver">🚗 Driver</option>
                 </select>
               </div>
 
-              <button type="submit" disabled={loading} className="btn-primary" style={{width: '100%'}}>
-                {loading ? '⏳ Registering...' : '✨ Register'}
+              <button type="submit" disabled={loading} className="btn-primary">
+                {loading ? '⏳ Registering...' : '✨ Create Account'}
               </button>
             </form>
 
             <div className="form-footer">
-              <p>Already have account? <button onClick={() => setIsRegistering(false)} className="toggle-btn">Login here</button></p>
+              <p>Already have account? <button type="button" onClick={() => setShowRegister(false)} className="toggle-btn">Login</button></p>
             </div>
           </div>
         </div>
@@ -152,7 +171,7 @@ const Login = () => {
           <div className="login-header">
             <div className="logo">⚡</div>
             <h1>eSakay Gensan</h1>
-            <p>Welcome back! Login to continue</p>
+            <p>Welcome! Login to continue</p>
           </div>
 
           {error && <div className="error-message">{error}</div>}
@@ -165,7 +184,6 @@ const Login = () => {
                 placeholder="admin@esakay.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 className="form-input"
               />
             </div>
@@ -174,26 +192,26 @@ const Login = () => {
               <label>Password</label>
               <input
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
                 className="form-input"
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{width: '100%'}}>
+            <button type="submit" disabled={loading} className="btn-primary">
               {loading ? '🔄 Logging in...' : '✨ Login'}
             </button>
           </form>
 
           <div className="demo-credentials">
-            <h4>📋 Demo Credentials:</h4>
-            <p><strong>Admin:</strong> admin@esakay.com / admin12345</p>
+            <h4>📋 Demo Admin:</h4>
+            <p><strong>admin@esakay.com</strong></p>
+            <p><strong>admin12345</strong></p>
           </div>
 
           <div className="form-footer">
-            <p>Don't have account? <button onClick={() => setIsRegistering(true)} className="toggle-btn">Register here</button></p>
+            <p>No account? <button type="button" onClick={() => setShowRegister(true)} className="toggle-btn">Register now</button></p>
           </div>
         </div>
       </div>
@@ -208,7 +226,6 @@ const Admin = () => {
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('pending');
-  const [stats, setStats] = useState({ pending: 0, approved: 0, total: 0 });
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -220,18 +237,9 @@ const Admin = () => {
     try {
       const response = await axios.get(`${API_URL}/admin/users`);
       setUsers(response.data);
-      
-      const pending = response.data.filter(u => !u.isApproved).length;
-      const approved = response.data.filter(u => u.isApproved).length;
-      
-      setStats({
-        pending,
-        approved,
-        total: response.data.length
-      });
-      
       setLoading(false);
     } catch (err) {
+      console.error('Error:', err);
       setError('Failed to load users');
       setLoading(false);
     }
@@ -243,7 +251,7 @@ const Admin = () => {
       alert('✅ User approved!');
       fetchUsers();
     } catch (err) {
-      alert('❌ Error: ' + err.response?.data?.message);
+      alert('Error: ' + err.response?.data?.message);
     }
   };
 
@@ -254,7 +262,7 @@ const Admin = () => {
         alert('✅ User rejected!');
         fetchUsers();
       } catch (err) {
-        alert('❌ Error: ' + err.response?.data?.message);
+        alert('Error: ' + err.response?.data?.message);
       }
     }
   };
@@ -266,7 +274,7 @@ const Admin = () => {
         alert('✅ User deleted!');
         fetchUsers();
       } catch (err) {
-        alert('❌ Error: ' + err.response?.data?.message);
+        alert('Error: ' + err.response?.data?.message);
       }
     }
   };
@@ -278,62 +286,49 @@ const Admin = () => {
     }
   };
 
-  if (loading) return <div className="loading">⏳ Loading dashboard...</div>;
+  if (loading) return <div className="loading">⏳ Loading...</div>;
 
   const pending = users.filter(u => !u.isApproved);
   const approved = users.filter(u => u.isApproved);
-  const displayUsers = tab === 'pending' ? pending : approved;
+  const display = tab === 'pending' ? pending : approved;
 
   return (
     <div className="admin-page">
-      {/* Header */}
       <div className="admin-header">
         <div className="header-content">
-          <div className="header-left">
+          <div>
             <h1>👨‍💼 Admin Dashboard</h1>
-            <p>Manage users and approvals</p>
+            <p>User Management System</p>
           </div>
           <div className="header-right">
-            <div className="user-info">
-              <span>👤 {user?.name}</span>
-              <button onClick={handleLogout} className="btn-logout">🚪 Logout</button>
-            </div>
+            <span>👤 {user?.name}</span>
+            <button onClick={handleLogout} className="btn-logout">🚪 Logout</button>
           </div>
         </div>
       </div>
 
-      {/* Statistics */}
       <div className="admin-container">
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">⏳</div>
-            <div className="stat-content">
-              <h3>{stats.pending}</h3>
-              <p>Pending Approval</p>
-            </div>
+            <h3>{pending.length}</h3>
+            <p>Pending</p>
           </div>
-
           <div className="stat-card">
             <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <h3>{stats.approved}</h3>
-              <p>Approved Users</p>
-            </div>
+            <h3>{approved.length}</h3>
+            <p>Approved</p>
           </div>
-
           <div className="stat-card">
             <div className="stat-icon">👥</div>
-            <div className="stat-content">
-              <h3>{stats.total}</h3>
-              <p>Total Users</p>
-            </div>
+            <h3>{users.length}</h3>
+            <p>Total Users</p>
           </div>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
-        {/* Tabs */}
-        <div className="tabs-container">
+        <div className="users-section">
           <div className="tabs">
             <button
               onClick={() => setTab('pending')}
@@ -348,16 +343,11 @@ const Admin = () => {
               ✅ Approved ({approved.length})
             </button>
           </div>
-        </div>
 
-        {/* Users Table */}
-        <div className="users-section">
           <h2>{tab === 'pending' ? '⏳ Pending Approval' : '✅ Approved Users'}</h2>
 
-          {displayUsers.length === 0 ? (
-            <div className="empty-state">
-              <p>No users found</p>
-            </div>
+          {display.length === 0 ? (
+            <div className="empty-state">No users</div>
           ) : (
             <div className="table-wrapper">
               <table className="users-table">
@@ -367,13 +357,13 @@ const Admin = () => {
                     <th>Email</th>
                     <th>Mobile</th>
                     <th>Type</th>
-                    <th>Date Joined</th>
-                    <th>Actions</th>
+                    <th>Date</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayUsers.map(u => (
-                    <tr key={u._id} className="table-row">
+                  {display.map(u => (
+                    <tr key={u._id}>
                       <td><strong>{u.name}</strong></td>
                       <td>{u.email}</td>
                       <td>{u.mobile}</td>
@@ -417,68 +407,55 @@ const Home = () => {
 
   return (
     <div className="user-page">
-      {/* Header */}
       <div className="user-header">
         <div className="header-content">
-          <div className="header-left">
+          <div>
             <h1>🚀 Welcome, {user?.name}!</h1>
-            <p>eSakay Gensan Smart Mobility Portal</p>
+            <p>eSakay Gensan Smart Mobility</p>
           </div>
-          <div className="header-right">
-            <button onClick={handleLogout} className="btn-logout">🚪 Logout</button>
-          </div>
+          <button onClick={handleLogout} className="btn-logout">🚪 Logout</button>
         </div>
       </div>
 
-      {/* Content */}
       <div className="user-container">
         {user?.isApproved ? (
           <>
-            <div className="welcome-section">
-              <h2>✅ Account Approved</h2>
-              <p>Your account is active. Start using eSakay Gensan!</p>
-            </div>
-
+            <h2 style={{marginBottom: '30px', color: '#333'}}>✅ Your Account is Active</h2>
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">📍</div>
                 <h3>Track Vehicle</h3>
-                <p>Real-time vehicle tracking and location</p>
+                <p>Real-time vehicle tracking</p>
                 <a href="#" className="feature-link">Get Started →</a>
               </div>
-
               <div className="feature-card">
                 <div className="feature-icon">💰</div>
                 <h3>Calculate Fare</h3>
-                <p>Get instant fare estimates for your trip</p>
+                <p>Instant fare estimates</p>
                 <a href="#" className="feature-link">Calculate →</a>
               </div>
-
               <div className="feature-card">
                 <div className="feature-icon">🗺️</div>
                 <h3>Route Planning</h3>
-                <p>Plan your journey with optimal routes</p>
+                <p>Optimal travel routes</p>
                 <a href="#" className="feature-link">Plan Now →</a>
               </div>
-
               <div className="feature-card">
                 <div className="feature-icon">📞</div>
-                <h3>Contact Support</h3>
-                <p>Get help from our support team</p>
+                <h3>Support</h3>
+                <p>24/7 customer support</p>
                 <a href="#" className="feature-link">Contact →</a>
               </div>
-
               <div className="feature-card">
                 <div className="feature-icon">💳</div>
                 <h3>Payment History</h3>
-                <p>View your transaction history</p>
+                <p>View all transactions</p>
                 <a href="#" className="feature-link">View →</a>
               </div>
-
               <div className="feature-card">
                 <div className="feature-icon">👤</div>
                 <h3>My Profile</h3>
-                <p>Manage your account settings</p>
+                <p>Manage your account</p>
                 <a href="#" className="feature-link">Edit →</a>
               </div>
             </div>
@@ -486,12 +463,13 @@ const Home = () => {
         ) : (
           <div className="pending-section">
             <div className="pending-icon">⏳</div>
-            <h2>Account Under Review</h2>
-            <p>Your registration is being reviewed by our admin team.</p>
-            <p className="pending-info">This usually takes 24-48 hours. Thank you for your patience!</p>
-            <div className="pending-details">
-              <p><strong>Account Type:</strong> {user?.role === 'driver' ? '🚗 Driver' : '👤 Passenger'}</p>
+            <h2>Your Account is Under Review</h2>
+            <p>Thank you for registering! Your account is being reviewed by our admin team.</p>
+            <p className="pending-time">⏱️ This usually takes 24-48 hours</p>
+            <div className="user-details">
+              <p><strong>Name:</strong> {user?.name}</p>
               <p><strong>Email:</strong> {user?.email}</p>
+              <p><strong>Type:</strong> {user?.role === 'driver' ? '🚗 Driver' : '👤 Passenger'}</p>
               <p><strong>Status:</strong> 🔄 Pending Approval</p>
             </div>
           </div>
@@ -512,7 +490,7 @@ const ProtectedRoute = ({ element, requiredRole = null }) => {
   return element;
 };
 
-// ===== MAIN APP =====
+// ===== APP =====
 function App() {
   const [isChecking, setIsChecking] = useState(true);
 
