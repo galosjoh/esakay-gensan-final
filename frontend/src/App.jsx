@@ -3,13 +3,9 @@ import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-// API Configuration
 const API_URL = import.meta.env.VITE_API_URL || 'https://esakay-gensan-final.onrender.com/api';
 
 console.log('🔗 API URL:', API_URL);
-
-// Configure axios
-axios.defaults.baseURL = API_URL;
 
 // ===== LOGIN COMPONENT =====
 const Login = () => {
@@ -17,37 +13,155 @@ const Login = () => {
   const [password, setPassword] = useState('admin12345');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    mobile: '',
+    userType: 'user'
+  });
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      console.log('🔐 Attempting login...');
+      console.log('🔐 Login attempt...');
       const response = await axios.post(`${API_URL}/auth/login`, {
         email,
         password
       });
 
-      console.log('✅ Login successful:', response.data);
-
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // Redirect based on role
       if (response.data.user.role === 'admin') {
         window.location.href = '/admin';
       } else {
         window.location.href = '/home';
       }
     } catch (err) {
-      console.error('❌ Login error:', err);
-      const errorMsg = err.response?.data?.message || 'Login failed';
-      setError(errorMsg);
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed');
       setLoading(false);
     }
   };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      console.log('📝 Registering user...');
+      const response = await axios.post(`${API_URL}/auth/register`, {
+        name: registerData.name,
+        email: registerData.email,
+        password: registerData.password,
+        mobile: registerData.mobile,
+        userType: registerData.userType
+      });
+
+      alert('✅ Registration successful! Please wait for admin approval.');
+      setIsRegistering(false);
+      setRegisterData({ name: '', email: '', password: '', mobile: '', userType: 'user' });
+    } catch (err) {
+      console.error('Register error:', err);
+      setError(err.response?.data?.message || 'Registration failed');
+      setLoading(false);
+    }
+  };
+
+  if (isRegistering) {
+    return (
+      <div style={styles.loginContainer}>
+        <div style={styles.loginCard}>
+          <h1 style={styles.title}>🚗 eSakay Gensan</h1>
+          <h2 style={styles.subtitle}>Register Account</h2>
+
+          {error && <div style={styles.errorBox}>{error}</div>}
+
+          <form onSubmit={handleRegister}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Full Name</label>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={registerData.name}
+                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Email</label>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={registerData.email}
+                onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Password</label>
+              <input
+                type="password"
+                placeholder="At least 6 characters"
+                value={registerData.password}
+                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Mobile Number</label>
+              <input
+                type="tel"
+                placeholder="09xxxxxxxxx"
+                value={registerData.mobile}
+                onChange={(e) => setRegisterData({ ...registerData, mobile: e.target.value })}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Account Type</label>
+              <select
+                value={registerData.userType}
+                onChange={(e) => setRegisterData({ ...registerData, userType: e.target.value })}
+                style={styles.input}
+              >
+                <option value="user">Passenger</option>
+                <option value="driver">Driver</option>
+              </select>
+            </div>
+
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? '⏳ Registering...' : '✨ Register'}
+            </button>
+          </form>
+
+          <p style={styles.toggleText}>
+            Already have account? {' '}
+            <button
+              onClick={() => setIsRegistering(false)}
+              style={styles.toggleLink}
+            >
+              Login here
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.loginContainer}>
@@ -57,7 +171,7 @@ const Login = () => {
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLogin}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email</label>
             <input
@@ -82,24 +196,26 @@ const Login = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.6 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
-          >
+          <button type="submit" disabled={loading} style={styles.button}>
             {loading ? '🔄 Logging in...' : '✨ Login'}
           </button>
         </form>
 
         <div style={styles.demoBox}>
-          <p style={styles.demoLabel}>📋 Demo Credentials:</p>
+          <p style={styles.demoLabel}>📋 Demo Admin:</p>
           <p style={styles.demoText}>Email: <strong>admin@esakay.com</strong></p>
           <p style={styles.demoText}>Password: <strong>admin12345</strong></p>
         </div>
+
+        <p style={styles.toggleText}>
+          Don't have account? {' '}
+          <button
+            onClick={() => setIsRegistering(true)}
+            style={styles.toggleLink}
+          >
+            Register here
+          </button>
+        </p>
       </div>
     </div>
   );
@@ -108,9 +224,12 @@ const Login = () => {
 // ===== ADMIN DASHBOARD =====
 const Admin = () => {
   const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -122,11 +241,15 @@ const Admin = () => {
     try {
       console.log('📊 Fetching users...');
       const response = await axios.get(`${API_URL}/admin/users`);
-      console.log('✅ Users fetched:', response.data);
       setUsers(response.data);
+      
+      // Separate pending and approved
+      setPendingUsers(response.data.filter(u => !u.isApproved));
+      setApprovedUsers(response.data.filter(u => u.isApproved));
+      
       setLoading(false);
     } catch (err) {
-      console.error('❌ Error fetching users:', err);
+      console.error('Error fetching users:', err);
       setError('Failed to load users');
       setLoading(false);
     }
@@ -142,8 +265,20 @@ const Admin = () => {
     }
   };
 
+  const handleReject = async (userId) => {
+    if (window.confirm('Reject this user?')) {
+      try {
+        await axios.put(`${API_URL}/admin/reject/${userId}`);
+        alert('✅ User rejected!');
+        fetchUsers();
+      } catch (err) {
+        alert('❌ Error: ' + err.response?.data?.message);
+      }
+    }
+  };
+
   const handleDelete = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Delete this user?')) {
       try {
         await axios.delete(`${API_URL}/user/${userId}`);
         alert('✅ User deleted!');
@@ -165,6 +300,8 @@ const Admin = () => {
     return <div style={styles.loading}>⏳ Loading users...</div>;
   }
 
+  const displayUsers = activeTab === 'pending' ? pendingUsers : approvedUsers;
+
   return (
     <div style={styles.adminContainer}>
       <div style={styles.adminHeader}>
@@ -180,53 +317,81 @@ const Admin = () => {
       {error && <div style={styles.errorBox}>{error}</div>}
 
       <div style={styles.tableContainer}>
-        <h2 style={styles.sectionTitle}>👥 User Management</h2>
-        
-        {users.length === 0 ? (
-          <p style={styles.emptyMessage}>No users found</p>
+        <div style={styles.tabButtons}>
+          <button
+            onClick={() => setActiveTab('pending')}
+            style={{
+              ...styles.tabButton,
+              backgroundColor: activeTab === 'pending' ? '#667eea' : '#e5e7eb',
+              color: activeTab === 'pending' ? 'white' : 'black'
+            }}
+          >
+            ⏳ Pending ({pendingUsers.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('approved')}
+            style={{
+              ...styles.tabButton,
+              backgroundColor: activeTab === 'approved' ? '#667eea' : '#e5e7eb',
+              color: activeTab === 'approved' ? 'white' : 'black'
+            }}
+          >
+            ✅ Approved ({approvedUsers.length})
+          </button>
+        </div>
+
+        <h2 style={styles.sectionTitle}>
+          {activeTab === 'pending' ? '⏳ Pending Approval' : '✅ Approved Users'}
+        </h2>
+
+        {displayUsers.length === 0 ? (
+          <p style={styles.emptyMessage}>
+            {activeTab === 'pending' ? 'No pending users' : 'No approved users'}
+          </p>
         ) : (
           <table style={styles.table}>
             <thead>
               <tr style={styles.tableHeader}>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Email</th>
-                <th style={styles.th}>Role</th>
-                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Mobile</th>
+                <th style={styles.th}>Type</th>
                 <th style={styles.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {displayUsers.map((u) => (
                 <tr key={u._id} style={styles.tableRow}>
                   <td style={styles.td}>{u.name}</td>
                   <td style={styles.td}>{u.email}</td>
+                  <td style={styles.td}>{u.mobile}</td>
                   <td style={styles.td}>
                     <span style={styles.roleBadge}>{u.role}</span>
                   </td>
                   <td style={styles.td}>
-                    <span style={{
-                      ...styles.statusBadge,
-                      backgroundColor: u.isApproved ? '#d1fae5' : '#fef3c7',
-                      color: u.isApproved ? '#065f46' : '#92400e'
-                    }}>
-                      {u.isApproved ? '✅ Approved' : '⏳ Pending'}
-                    </span>
-                  </td>
-                  <td style={styles.td}>
-                    {!u.isApproved && (
+                    {activeTab === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => handleApprove(u._id)}
+                          style={styles.approveButton}
+                        >
+                          ✅ Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(u._id)}
+                          style={styles.rejectButton}
+                        >
+                          ❌ Reject
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        onClick={() => handleApprove(u._id)}
-                        style={styles.approveButton}
+                        onClick={() => handleDelete(u._id)}
+                        style={styles.deleteButton}
                       >
-                        ✔️ Approve
+                        🗑️ Delete
                       </button>
                     )}
-                    <button
-                      onClick={() => handleDelete(u._id)}
-                      style={styles.deleteButton}
-                    >
-                      🗑️ Delete
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -260,29 +425,42 @@ const Home = () => {
         <div>
           <h1 style={styles.homeTitle}>🚀 Welcome, {user?.name}!</h1>
           <p style={styles.homeSubtitle}>eSakay Gensan Smart Mobility</p>
+          {user && !user.isApproved && (
+            <p style={styles.pendingNotice}>
+              ⏳ Your account is pending admin approval. You'll be notified soon.
+            </p>
+          )}
         </div>
         <button onClick={handleLogout} style={styles.logoutButton}>
           🚪 Logout
         </button>
       </div>
 
-      <div style={styles.cardGrid}>
-        <div style={styles.card}>
-          <h3>📍 Track Vehicle</h3>
-          <p>Real-time vehicle tracking</p>
-          <a href="#" style={styles.link}>Track Now →</a>
+      {user?.isApproved ? (
+        <div style={styles.cardGrid}>
+          <div style={styles.card}>
+            <h3>📍 Track Vehicle</h3>
+            <p>Real-time vehicle tracking</p>
+            <a href="#" style={styles.link}>Track Now →</a>
+          </div>
+          <div style={styles.card}>
+            <h3>💰 Calculate Fare</h3>
+            <p>Instant fare estimates</p>
+            <a href="#" style={styles.link}>Calculate →</a>
+          </div>
+          <div style={styles.card}>
+            <h3>👤 My Profile</h3>
+            <p>Manage your account</p>
+            <a href="#" style={styles.link}>Edit Profile →</a>
+          </div>
         </div>
-        <div style={styles.card}>
-          <h3>💰 Calculate Fare</h3>
-          <p>Instant fare estimates</p>
-          <a href="#" style={styles.link}>Calculate →</a>
+      ) : (
+        <div style={styles.waitingBox}>
+          <h2>⏳ Account Under Review</h2>
+          <p>Your registration is being reviewed by our admin team.</p>
+          <p>This usually takes 24-48 hours. Thank you for your patience!</p>
         </div>
-        <div style={styles.card}>
-          <h3>👤 My Profile</h3>
-          <p>Manage your account</p>
-          <a href="#" style={styles.link}>Edit Profile →</a>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -305,7 +483,6 @@ const ProtectedRoute = ({ element, requiredRole = null }) => {
 
 // ===== STYLES =====
 const styles = {
-  // Login Styles
   loginContainer: {
     display: 'flex',
     justifyContent: 'center',
@@ -347,8 +524,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '8px',
     fontSize: '16px',
-    boxSizing: 'border-box',
-    transition: '0.3s'
+    boxSizing: 'border-box'
   },
   button: {
     width: '100%',
@@ -359,16 +535,14 @@ const styles = {
     borderRadius: '8px',
     fontSize: '16px',
     fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: '0.3s'
+    cursor: 'pointer'
   },
   errorBox: {
     background: '#fee',
     color: '#c33',
     padding: '12px',
     borderRadius: '8px',
-    marginBottom: '20px',
-    border: '1px solid #fcc'
+    marginBottom: '20px'
   },
   demoBox: {
     marginTop: '20px',
@@ -385,8 +559,19 @@ const styles = {
     margin: '5px 0',
     fontSize: '14px'
   },
+  toggleText: {
+    textAlign: 'center',
+    marginTop: '15px'
+  },
+  toggleLink: {
+    background: 'none',
+    border: 'none',
+    color: '#667eea',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    fontSize: '14px'
+  },
 
-  // Admin Styles
   adminContainer: {
     padding: '30px',
     maxWidth: '1200px',
@@ -424,6 +609,19 @@ const styles = {
     padding: '20px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
+  tabButtons: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px'
+  },
+  tabButton: {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: '0.3s'
+  },
   sectionTitle: {
     fontSize: '20px',
     marginTop: '0',
@@ -455,15 +653,20 @@ const styles = {
     borderRadius: '4px',
     fontSize: '12px'
   },
-  statusBadge: {
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '12px'
-  },
   approveButton: {
-    marginRight: '10px',
+    marginRight: '5px',
     padding: '6px 12px',
     background: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px'
+  },
+  rejectButton: {
+    marginRight: '5px',
+    padding: '6px 12px',
+    background: '#f59e0b',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
@@ -492,7 +695,6 @@ const styles = {
     fontSize: '20px'
   },
 
-  // Home Styles
   homeContainer: {
     padding: '30px',
     maxWidth: '1200px',
@@ -515,6 +717,12 @@ const styles = {
     color: '#666',
     margin: '0'
   },
+  pendingNotice: {
+    color: '#f59e0b',
+    fontSize: '14px',
+    marginTop: '10px',
+    fontWeight: 'bold'
+  },
   cardGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -530,6 +738,14 @@ const styles = {
     color: '#667eea',
     textDecoration: 'none',
     fontWeight: 'bold'
+  },
+  waitingBox: {
+    background: 'linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%)',
+    padding: '40px',
+    borderRadius: '10px',
+    textAlign: 'center',
+    maxWidth: '500px',
+    margin: '40px auto'
   }
 };
 

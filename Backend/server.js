@@ -5,9 +5,9 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware
+// CORS Configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: ['https://esakay-gensan-gcp.web.app', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -22,17 +22,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB Connection
+// Database Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
   .then(async () => {
-    console.log('✅ MongoDB Connected Successfully');
+    console.log('✅ MongoDB Connected');
     
     const User = require('./models/User');
     
-    // Auto-create admin account
+    // Create admin if doesn't exist
     try {
       const adminExists = await User.findOne({ email: 'admin@esakay.com' });
       if (!adminExists) {
@@ -44,21 +44,18 @@ mongoose.connect(process.env.MONGO_URI, {
           role: 'admin',
           isApproved: true
         });
-        console.log('🚀 Admin Account Created: admin@esakay.com / admin12345');
+        console.log('🚀 Admin created: admin@esakay.com / admin12345');
       }
     } catch (err) {
-      console.log('Admin account already exists or error:', err.message);
+      console.log('Admin already exists');
     }
   })
   .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error('❌ MongoDB Error:', err.message);
     process.exit(1);
   });
 
-// Routes
-app.use('/api', require('./routes/authRoutes'));
-
-// Health Check Endpoint
+// Health Check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'Server Running',
@@ -67,13 +64,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error Handling Middleware
+// Routes
+app.use('/api', require('./routes/authRoutes'));
+
+// Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.message);
-  res.status(500).json({ 
-    message: err.message,
-    error: process.env.NODE_ENV === 'development' ? err : {}
-  });
+  res.status(500).json({ message: err.message });
 });
 
 // 404 Handler
@@ -81,10 +78,8 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 API URL: https://esakay-gensan-final.onrender.com`);
-  console.log(`🔗 CORS Origin: ${process.env.CORS_ORIGIN}`);
+  console.log(`📍 API: ${process.env.CORS_ORIGIN || 'http://localhost:5000'}`);
 });

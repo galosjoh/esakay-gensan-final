@@ -2,49 +2,47 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// LOGIN Route
+// LOGIN
 router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.status(400).json({ 
         success: false,
-        message: 'Email and password are required' 
+        message: 'Email and password required' 
       });
     }
 
-    // Find user
     const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(404).json({ 
         success: false,
-        message: 'Email not found' 
+        message: 'User not found' 
       });
     }
 
-    // Check password
     if (user.password !== password) {
       return res.status(401).json({ 
         success: false,
-        message: 'Incorrect password' 
+        message: 'Wrong password' 
       });
     }
 
-    // Check if approved (for regular users)
+    // Check approval for regular users
     if (user.role === 'user' && !user.isApproved) {
       return res.status(403).json({ 
         success: false,
-        message: 'Your account is pending admin approval' 
+        message: 'Your account is pending admin approval. Please wait.'
       });
     }
 
-    // Generate token (in production, use JWT)
     const token = user._id.toString();
 
     res.json({
       success: true,
+      message: 'Login successful',
       token,
       user: {
         _id: user._id,
@@ -56,29 +54,27 @@ router.post('/auth/login', async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ 
       success: false,
-      message: error.message 
+      message: err.message 
     });
   }
 });
 
-// REGISTER Route
+// REGISTER
 router.post('/auth/register', async (req, res) => {
   try {
     const { name, email, password, mobile, userType } = req.body;
 
-    // Validation
     if (!name || !email || !password || !mobile) {
       return res.status(400).json({ 
         success: false,
-        message: 'All fields are required' 
+        message: 'All fields required' 
       });
     }
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ 
@@ -87,7 +83,6 @@ router.post('/auth/register', async (req, res) => {
       });
     }
 
-    // Create new user
     const newUser = new User({
       name,
       email,
@@ -101,7 +96,7 @@ router.post('/auth/register', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Please wait for admin approval.',
+      message: 'Registration successful. Awaiting admin approval.',
       token: newUser._id.toString(),
       user: {
         _id: newUser._id,
@@ -120,74 +115,61 @@ router.post('/auth/register', async (req, res) => {
   }
 });
 
-// GET ALL USERS (Admin Only)
+// GET ALL USERS (ADMIN)
 router.get('/admin/users', async (req, res) => {
   try {
     const users = await User.find({ role: 'user' }).select('-password');
     res.json(users);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 
-// APPROVE USER (Admin Only)
+// APPROVE USER (ADMIN)
 router.put('/admin/approve/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { isApproved: true, updatedAt: new Date() },
+      { isApproved: true },
       { new: true }
     );
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     res.json({ 
       success: true,
-      message: 'User approved successfully',
+      message: 'User approved',
       user 
     });
 
-  } catch (error) {
-    console.error('Approval error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// REJECT USER (ADMIN) - NEW
+router.put('/admin/reject/:id', async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ 
+      success: true,
+      message: 'User rejected and deleted' 
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
 // DELETE USER
 router.delete('/user/:id', async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
-
-    res.json({ 
-      success: true,
-      message: 'User deleted successfully' 
-    });
-
-  } catch (error) {
-    console.error('Delete error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
