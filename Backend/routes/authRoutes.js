@@ -5,37 +5,34 @@ const User = require('../models/User');
 // REGISTER
 router.post('/register', async (req, res) => {
     try {
-        const newUser = new User(req.body); // name, email, password, mobile
+        const newUser = new User({ ...req.body, role: 'user', isApproved: false });
         await newUser.save();
-        res.status(201).json({ success: true });
-    } catch (error) { res.status(400).json({ success: false, message: "Email used." }); }
+        res.status(201).json({ success: true, message: "Registered! Wait for Admin approval." });
+    } catch (error) { res.status(400).json({ success: false, message: "Email already exists." }); }
 });
 
-// LOGIN (MAHALAGA: Dito tinitingnan ang Role at Approval)
+// LOGIN
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
-
-        if (!user || user.password !== password) {
-            return res.status(401).json({ message: "Mali ang email o password." });
-        }
-
-        // Kung USER at hindi pa APPROVED
-        if (user.role === 'user' && !user.isApproved) {
-            return res.status(403).json({ message: "Pending Approval: Hintayin ang approval ni Admin." });
-        }
-
+        if (!user || user.password !== password) return res.status(401).json({ message: "Invalid credentials" });
+        if (user.role === 'user' && !user.isApproved) return res.status(403).json({ message: "Account pending approval." });
         res.json({ success: true, user });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// ADMIN: GET ALL USERS PARA SA TABLE
+// ADMIN: DASHBOARD STATS
+router.get('/admin/stats', async (req, res) => {
+    const totalUsers = await User.countDocuments({ role: 'user' });
+    const pending = await User.countDocuments({ role: 'user', isApproved: false });
+    res.json({ totalCommuters: totalUsers, pendingApprovals: pending });
+});
+
+// ADMIN: GET USERS
 router.get('/admin/users', async (req, res) => {
-    try {
-        const users = await User.find({ role: 'user' });
-        res.json(users);
-    } catch (err) { res.status(500).json(err); }
+    const users = await User.find({ role: 'user' });
+    res.json(users);
 });
 
 // ADMIN: APPROVE USER
@@ -44,7 +41,7 @@ router.put('/admin/approve/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// CRUD: DELETE USER
+// DELETE ACCOUNT (CRUD)
 router.delete('/user/:id', async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true });
