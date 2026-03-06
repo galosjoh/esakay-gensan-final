@@ -3,18 +3,16 @@ import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://esakay-gensan-final.onrender.com/api';
+const API_URL = 'https://esakay-gensan-final.onrender.com/api';
 
-console.log('🔗 API URL:', API_URL);
-
-// ===== LOGIN COMPONENT =====
+// LOGIN & REGISTER COMPONENT
 const Login = () => {
   const [email, setEmail] = useState('admin@esakay.com');
   const [password, setPassword] = useState('admin12345');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [registerData, setRegisterData] = useState({
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
@@ -28,7 +26,6 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('🔐 Login attempt...');
       const response = await axios.post(`${API_URL}/auth/login`, {
         email,
         password
@@ -43,7 +40,6 @@ const Login = () => {
         window.location.href = '/home';
       }
     } catch (err) {
-      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed');
       setLoading(false);
     }
@@ -55,20 +51,11 @@ const Login = () => {
     setError('');
 
     try {
-      console.log('📝 Registering user...');
-      const response = await axios.post(`${API_URL}/auth/register`, {
-        name: registerData.name,
-        email: registerData.email,
-        password: registerData.password,
-        mobile: registerData.mobile,
-        userType: registerData.userType
-      });
-
-      alert('✅ Registration successful! Please wait for admin approval.');
+      await axios.post(`${API_URL}/auth/register`, formData);
+      alert('✅ Registration successful! Wait for admin approval.');
       setIsRegistering(false);
-      setRegisterData({ name: '', email: '', password: '', mobile: '', userType: 'user' });
+      setFormData({ name: '', email: '', password: '', mobile: '', userType: 'user' });
     } catch (err) {
-      console.error('Register error:', err);
       setError(err.response?.data?.message || 'Registration failed');
       setLoading(false);
     }
@@ -76,87 +63,58 @@ const Login = () => {
 
   if (isRegistering) {
     return (
-      <div style={styles.loginContainer}>
-        <div style={styles.loginCard}>
-          <h1 style={styles.title}>🚗 eSakay Gensan</h1>
-          <h2 style={styles.subtitle}>Register Account</h2>
-
-          {error && <div style={styles.errorBox}>{error}</div>}
-
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h1>🚗 eSakay Gensan</h1>
+          <h2>Register</h2>
+          {error && <div style={styles.error}>{error}</div>}
           <form onSubmit={handleRegister}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Full Name</label>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={registerData.name}
-                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                required
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email</label>
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={registerData.email}
-                onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                required
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                placeholder="At least 6 characters"
-                value={registerData.password}
-                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                required
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Mobile Number</label>
-              <input
-                type="tel"
-                placeholder="09xxxxxxxxx"
-                value={registerData.mobile}
-                onChange={(e) => setRegisterData({ ...registerData, mobile: e.target.value })}
-                required
-                style={styles.input}
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Account Type</label>
-              <select
-                value={registerData.userType}
-                onChange={(e) => setRegisterData({ ...registerData, userType: e.target.value })}
-                style={styles.input}
-              >
-                <option value="user">Passenger</option>
-                <option value="driver">Driver</option>
-              </select>
-            </div>
-
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              required
+              style={styles.input}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              required
+              style={styles.input}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required
+              style={styles.input}
+            />
+            <input
+              type="tel"
+              placeholder="Mobile"
+              value={formData.mobile}
+              onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+              required
+              style={styles.input}
+            />
+            <select
+              value={formData.userType}
+              onChange={(e) => setFormData({...formData, userType: e.target.value})}
+              style={styles.input}
+            >
+              <option value="user">Passenger</option>
+              <option value="driver">Driver</option>
+            </select>
             <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? '⏳ Registering...' : '✨ Register'}
+              {loading ? 'Registering...' : 'Register'}
             </button>
           </form>
-
-          <p style={styles.toggleText}>
-            Already have account? {' '}
-            <button
-              onClick={() => setIsRegistering(false)}
-              style={styles.toggleLink}
-            >
-              Login here
-            </button>
+          <p style={styles.link}>
+            Have account? <button onClick={() => setIsRegistering(false)} style={{background: 'none', border: 'none', color: '#667eea', cursor: 'pointer'}}>Login</button>
           </p>
         </div>
       </div>
@@ -164,72 +122,52 @@ const Login = () => {
   }
 
   return (
-    <div style={styles.loginContainer}>
-      <div style={styles.loginCard}>
-        <h1 style={styles.title}>🚗 eSakay Gensan</h1>
-        <h2 style={styles.subtitle}>Login</h2>
-
-        {error && <div style={styles.errorBox}>{error}</div>}
-
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1>🚗 eSakay Gensan</h1>
+        <h2>Login</h2>
+        {error && <div style={styles.error}>{error}</div>}
         <form onSubmit={handleLogin}>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Email</label>
-            <input
-              type="email"
-              placeholder="admin@esakay.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              placeholder="admin12345"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={styles.input}
-            />
-          </div>
-
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={styles.input}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={styles.input}
+          />
           <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? '🔄 Logging in...' : '✨ Login'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        <div style={styles.demoBox}>
-          <p style={styles.demoLabel}>📋 Demo Admin:</p>
-          <p style={styles.demoText}>Email: <strong>admin@esakay.com</strong></p>
-          <p style={styles.demoText}>Password: <strong>admin12345</strong></p>
+        <div style={styles.demo}>
+          <p><strong>Demo Admin:</strong></p>
+          <p>Email: admin@esakay.com</p>
+          <p>Password: admin12345</p>
         </div>
-
-        <p style={styles.toggleText}>
-          Don't have account? {' '}
-          <button
-            onClick={() => setIsRegistering(true)}
-            style={styles.toggleLink}
-          >
-            Register here
-          </button>
+        <p style={styles.link}>
+          No account? <button onClick={() => setIsRegistering(true)} style={{background: 'none', border: 'none', color: '#667eea', cursor: 'pointer'}}>Register</button>
         </p>
       </div>
     </div>
   );
 };
 
-// ===== ADMIN DASHBOARD =====
+// ADMIN DASHBOARD
 const Admin = () => {
   const [users, setUsers] = useState([]);
-  const [pendingUsers, setPendingUsers] = useState([]);
-  const [approvedUsers, setApprovedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [tab, setTab] = useState('pending');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -239,17 +177,10 @@ const Admin = () => {
 
   const fetchUsers = async () => {
     try {
-      console.log('📊 Fetching users...');
       const response = await axios.get(`${API_URL}/admin/users`);
       setUsers(response.data);
-      
-      // Separate pending and approved
-      setPendingUsers(response.data.filter(u => !u.isApproved));
-      setApprovedUsers(response.data.filter(u => u.isApproved));
-      
       setLoading(false);
     } catch (err) {
-      console.error('Error fetching users:', err);
       setError('Failed to load users');
       setLoading(false);
     }
@@ -261,30 +192,30 @@ const Admin = () => {
       alert('✅ User approved!');
       fetchUsers();
     } catch (err) {
-      alert('❌ Error: ' + err.response?.data?.message);
+      alert('Error: ' + err.response?.data?.message);
     }
   };
 
   const handleReject = async (userId) => {
-    if (window.confirm('Reject this user?')) {
+    if (window.confirm('Reject user?')) {
       try {
         await axios.put(`${API_URL}/admin/reject/${userId}`);
         alert('✅ User rejected!');
         fetchUsers();
       } catch (err) {
-        alert('❌ Error: ' + err.response?.data?.message);
+        alert('Error: ' + err.response?.data?.message);
       }
     }
   };
 
   const handleDelete = async (userId) => {
-    if (window.confirm('Delete this user?')) {
+    if (window.confirm('Delete user?')) {
       try {
         await axios.delete(`${API_URL}/user/${userId}`);
         alert('✅ User deleted!');
         fetchUsers();
       } catch (err) {
-        alert('❌ Error: ' + err.response?.data?.message);
+        alert('Error: ' + err.response?.data?.message);
       }
     }
   };
@@ -296,101 +227,68 @@ const Admin = () => {
     }
   };
 
-  if (loading) {
-    return <div style={styles.loading}>⏳ Loading users...</div>;
-  }
+  if (loading) return <div style={styles.container}>Loading...</div>;
 
-  const displayUsers = activeTab === 'pending' ? pendingUsers : approvedUsers;
+  const pending = users.filter(u => !u.isApproved);
+  const approved = users.filter(u => u.isApproved);
+  const displayUsers = tab === 'pending' ? pending : approved;
 
   return (
     <div style={styles.adminContainer}>
-      <div style={styles.adminHeader}>
+      <div style={styles.header}>
         <div>
-          <h1 style={styles.adminTitle}>👨‍💼 Admin Dashboard</h1>
-          <p style={styles.adminSubtitle}>Welcome, {user?.name}!</p>
+          <h1>👨‍💼 Admin Dashboard</h1>
+          <p>Welcome, {user?.name}!</p>
         </div>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          🚪 Logout
-        </button>
+        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
       </div>
 
-      {error && <div style={styles.errorBox}>{error}</div>}
+      {error && <div style={styles.error}>{error}</div>}
 
-      <div style={styles.tableContainer}>
-        <div style={styles.tabButtons}>
+      <div style={styles.admin}>
+        <div style={styles.tabs}>
           <button
-            onClick={() => setActiveTab('pending')}
-            style={{
-              ...styles.tabButton,
-              backgroundColor: activeTab === 'pending' ? '#667eea' : '#e5e7eb',
-              color: activeTab === 'pending' ? 'white' : 'black'
-            }}
+            onClick={() => setTab('pending')}
+            style={{...styles.tab, backgroundColor: tab === 'pending' ? '#667eea' : '#e5e7eb', color: tab === 'pending' ? 'white' : 'black'}}
           >
-            ⏳ Pending ({pendingUsers.length})
+            ⏳ Pending ({pending.length})
           </button>
           <button
-            onClick={() => setActiveTab('approved')}
-            style={{
-              ...styles.tabButton,
-              backgroundColor: activeTab === 'approved' ? '#667eea' : '#e5e7eb',
-              color: activeTab === 'approved' ? 'white' : 'black'
-            }}
+            onClick={() => setTab('approved')}
+            style={{...styles.tab, backgroundColor: tab === 'approved' ? '#667eea' : '#e5e7eb', color: tab === 'approved' ? 'white' : 'black'}}
           >
-            ✅ Approved ({approvedUsers.length})
+            ✅ Approved ({approved.length})
           </button>
         </div>
 
-        <h2 style={styles.sectionTitle}>
-          {activeTab === 'pending' ? '⏳ Pending Approval' : '✅ Approved Users'}
-        </h2>
-
         {displayUsers.length === 0 ? (
-          <p style={styles.emptyMessage}>
-            {activeTab === 'pending' ? 'No pending users' : 'No approved users'}
-          </p>
+          <p>No users</p>
         ) : (
           <table style={styles.table}>
             <thead>
-              <tr style={styles.tableHeader}>
+              <tr style={styles.headerRow}>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Email</th>
                 <th style={styles.th}>Mobile</th>
                 <th style={styles.th}>Type</th>
-                <th style={styles.th}>Actions</th>
+                <th style={styles.th}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {displayUsers.map((u) => (
-                <tr key={u._id} style={styles.tableRow}>
+              {displayUsers.map(u => (
+                <tr key={u._id} style={styles.row}>
                   <td style={styles.td}>{u.name}</td>
                   <td style={styles.td}>{u.email}</td>
                   <td style={styles.td}>{u.mobile}</td>
+                  <td style={styles.td}>{u.role}</td>
                   <td style={styles.td}>
-                    <span style={styles.roleBadge}>{u.role}</span>
-                  </td>
-                  <td style={styles.td}>
-                    {activeTab === 'pending' ? (
+                    {tab === 'pending' ? (
                       <>
-                        <button
-                          onClick={() => handleApprove(u._id)}
-                          style={styles.approveButton}
-                        >
-                          ✅ Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(u._id)}
-                          style={styles.rejectButton}
-                        >
-                          ❌ Reject
-                        </button>
+                        <button onClick={() => handleApprove(u._id)} style={styles.btnApprove}>✅ Approve</button>
+                        <button onClick={() => handleReject(u._id)} style={styles.btnReject}>❌ Reject</button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => handleDelete(u._id)}
-                        style={styles.deleteButton}
-                      >
-                        🗑️ Delete
-                      </button>
+                      <button onClick={() => handleDelete(u._id)} style={styles.btnDelete}>🗑️ Delete</button>
                     )}
                   </td>
                 </tr>
@@ -403,7 +301,7 @@ const Admin = () => {
   );
 };
 
-// ===== USER HOME =====
+// USER HOME
 const Home = () => {
   const [user, setUser] = useState(null);
 
@@ -413,77 +311,60 @@ const Home = () => {
   }, []);
 
   const handleLogout = () => {
-    if (window.confirm('Logout?')) {
-      localStorage.clear();
-      window.location.href = '/';
-    }
+    localStorage.clear();
+    window.location.href = '/';
   };
 
   return (
     <div style={styles.homeContainer}>
-      <div style={styles.homeHeader}>
+      <div style={styles.header}>
         <div>
-          <h1 style={styles.homeTitle}>🚀 Welcome, {user?.name}!</h1>
-          <p style={styles.homeSubtitle}>eSakay Gensan Smart Mobility</p>
-          {user && !user.isApproved && (
-            <p style={styles.pendingNotice}>
-              ⏳ Your account is pending admin approval. You'll be notified soon.
-            </p>
-          )}
+          <h1>🚀 Welcome, {user?.name}!</h1>
+          <p>eSakay Gensan Smart Mobility</p>
+          {!user?.isApproved && <p style={{color: '#f59e0b'}}>⏳ Awaiting approval...</p>}
         </div>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          🚪 Logout
-        </button>
+        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
       </div>
 
       {user?.isApproved ? (
         <div style={styles.cardGrid}>
-          <div style={styles.card}>
+          <div style={styles.card2}>
             <h3>📍 Track Vehicle</h3>
-            <p>Real-time vehicle tracking</p>
-            <a href="#" style={styles.link}>Track Now →</a>
+            <p>Real-time tracking</p>
           </div>
-          <div style={styles.card}>
+          <div style={styles.card2}>
             <h3>💰 Calculate Fare</h3>
-            <p>Instant fare estimates</p>
-            <a href="#" style={styles.link}>Calculate →</a>
+            <p>Get fare estimates</p>
           </div>
-          <div style={styles.card}>
+          <div style={styles.card2}>
             <h3>👤 My Profile</h3>
-            <p>Manage your account</p>
-            <a href="#" style={styles.link}>Edit Profile →</a>
+            <p>Manage account</p>
           </div>
         </div>
       ) : (
-        <div style={styles.waitingBox}>
-          <h2>⏳ Account Under Review</h2>
-          <p>Your registration is being reviewed by our admin team.</p>
-          <p>This usually takes 24-48 hours. Thank you for your patience!</p>
+        <div style={{padding: '40px', textAlign: 'center', background: '#fef3c7', borderRadius: '10px', margin: '40px auto', maxWidth: '500px'}}>
+          <h2>⏳ Under Review</h2>
+          <p>Your account is being reviewed. Check back soon!</p>
         </div>
       )}
     </div>
   );
 };
 
-// ===== PROTECTED ROUTE =====
+// PROTECTED ROUTE
 const ProtectedRoute = ({ element, requiredRole = null }) => {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
-  if (!user) {
-    return <Navigate to="/" />;
-  }
-
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/" />;
-  }
+  if (!user) return <Navigate to="/" />;
+  if (requiredRole && user.role !== requiredRole) return <Navigate to="/" />;
 
   return element;
 };
 
-// ===== STYLES =====
+// STYLES
 const styles = {
-  loginContainer: {
+  container: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -491,85 +372,53 @@ const styles = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     padding: '20px'
   },
-  loginCard: {
+  card: {
     background: 'white',
-    padding: '50px',
+    padding: '40px',
     borderRadius: '15px',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
     width: '100%',
     maxWidth: '400px'
   },
-  title: {
-    fontSize: '32px',
-    marginBottom: '5px',
-    color: '#333'
-  },
-  subtitle: {
-    fontSize: '24px',
-    marginBottom: '30px',
-    color: '#666'
-  },
-  inputGroup: {
-    marginBottom: '20px'
-  },
-  label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: '600',
-    color: '#333'
-  },
   input: {
     width: '100%',
     padding: '12px',
+    margin: '10px 0',
     border: '1px solid #ddd',
     borderRadius: '8px',
-    fontSize: '16px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    fontSize: '14px'
   },
   button: {
     width: '100%',
     padding: '12px',
+    margin: '20px 0 10px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontWeight: 'bold'
   },
-  errorBox: {
+  error: {
     background: '#fee',
     color: '#c33',
-    padding: '12px',
+    padding: '10px',
     borderRadius: '8px',
     marginBottom: '20px'
   },
-  demoBox: {
-    marginTop: '20px',
-    padding: '15px',
+  demo: {
     background: '#f0f0f0',
+    padding: '15px',
     borderRadius: '8px',
-    textAlign: 'center'
-  },
-  demoLabel: {
-    fontWeight: 'bold',
-    marginBottom: '10px'
-  },
-  demoText: {
-    margin: '5px 0',
-    fontSize: '14px'
-  },
-  toggleText: {
+    marginTop: '20px',
     textAlign: 'center',
-    marginTop: '15px'
+    fontSize: '12px'
   },
-  toggleLink: {
-    background: 'none',
-    border: 'none',
-    color: '#667eea',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    fontSize: '14px'
+  link: {
+    textAlign: 'center',
+    fontSize: '12px',
+    marginTop: '10px'
   },
 
   adminContainer: {
@@ -577,61 +426,45 @@ const styles = {
     maxWidth: '1200px',
     margin: '0 auto'
   },
-  adminHeader: {
+  header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '40px',
+    marginBottom: '30px',
     paddingBottom: '20px',
     borderBottom: '2px solid #eee'
   },
-  adminTitle: {
-    fontSize: '32px',
-    margin: '0 0 5px 0'
-  },
-  adminSubtitle: {
-    fontSize: '16px',
-    color: '#666',
-    margin: '0'
-  },
-  logoutButton: {
+  logoutBtn: {
     padding: '10px 20px',
     background: '#ef4444',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: 'bold'
+    cursor: 'pointer'
   },
-  tableContainer: {
+  admin: {
     background: 'white',
-    borderRadius: '10px',
     padding: '20px',
+    borderRadius: '10px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
-  tabButtons: {
+  tabs: {
     display: 'flex',
     gap: '10px',
     marginBottom: '20px'
   },
-  tabButton: {
+  tab: {
     padding: '10px 20px',
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: '0.3s'
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    marginTop: '0',
-    marginBottom: '20px'
+    fontWeight: 'bold'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse'
   },
-  tableHeader: {
+  headerRow: {
     background: '#f3f4f6',
     borderBottom: '2px solid #e5e7eb'
   },
@@ -640,20 +473,13 @@ const styles = {
     textAlign: 'left',
     fontWeight: '600'
   },
-  tableRow: {
+  row: {
     borderBottom: '1px solid #e5e7eb'
   },
   td: {
     padding: '12px'
   },
-  roleBadge: {
-    background: '#dbeafe',
-    color: '#0c4a6e',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '12px'
-  },
-  approveButton: {
+  btnApprove: {
     marginRight: '5px',
     padding: '6px 12px',
     background: '#10b981',
@@ -663,7 +489,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '12px'
   },
-  rejectButton: {
+  btnReject: {
     marginRight: '5px',
     padding: '6px 12px',
     background: '#f59e0b',
@@ -673,7 +499,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '12px'
   },
-  deleteButton: {
+  btnDelete: {
     padding: '6px 12px',
     background: '#ef4444',
     color: 'white',
@@ -682,74 +508,27 @@ const styles = {
     cursor: 'pointer',
     fontSize: '12px'
   },
-  emptyMessage: {
-    textAlign: 'center',
-    color: '#666',
-    padding: '20px'
-  },
-  loading: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    fontSize: '20px'
-  },
 
   homeContainer: {
     padding: '30px',
     maxWidth: '1200px',
     margin: '0 auto'
   },
-  homeHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '40px',
-    paddingBottom: '20px',
-    borderBottom: '2px solid #eee'
-  },
-  homeTitle: {
-    fontSize: '32px',
-    margin: '0 0 5px 0'
-  },
-  homeSubtitle: {
-    fontSize: '16px',
-    color: '#666',
-    margin: '0'
-  },
-  pendingNotice: {
-    color: '#f59e0b',
-    fontSize: '14px',
-    marginTop: '10px',
-    fontWeight: 'bold'
-  },
   cardGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px'
+    gap: '20px',
+    marginTop: '30px'
   },
-  card: {
+  card2: {
     background: 'white',
     padding: '20px',
     borderRadius: '10px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  link: {
-    color: '#667eea',
-    textDecoration: 'none',
-    fontWeight: 'bold'
-  },
-  waitingBox: {
-    background: 'linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%)',
-    padding: '40px',
-    borderRadius: '10px',
-    textAlign: 'center',
-    maxWidth: '500px',
-    margin: '40px auto'
   }
 };
 
-// ===== MAIN APP =====
+// MAIN APP
 function App() {
   const [isChecking, setIsChecking] = useState(true);
 
@@ -762,7 +541,6 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
       <Route path="/home" element={<ProtectedRoute element={<Home />} />} />
       <Route path="/admin" element={<ProtectedRoute element={<Admin />} requiredRole="admin" />} />
       <Route path="*" element={<Navigate to="/" />} />
@@ -770,8 +548,4 @@ function App() {
   );
 }
 
-export default () => (
-  <Router>
-    <App />
-  </Router>
-);
+export default () => <Router><App /></Router>;

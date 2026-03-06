@@ -6,14 +6,13 @@ const cors = require('cors');
 const app = express();
 
 // CORS Configuration
-const corsOptions = {
+app.use(cors({
   origin: ['https://esakay-gensan-gcp.web.app', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-};
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Request logging
@@ -32,7 +31,6 @@ mongoose.connect(process.env.MONGO_URI, {
     
     const User = require('./models/User');
     
-    // Create admin if doesn't exist
     try {
       const adminExists = await User.findOne({ email: 'admin@esakay.com' });
       if (!adminExists) {
@@ -44,10 +42,10 @@ mongoose.connect(process.env.MONGO_URI, {
           role: 'admin',
           isApproved: true
         });
-        console.log('🚀 Admin created: admin@esakay.com / admin12345');
+        console.log('🚀 Admin created');
       }
     } catch (err) {
-      console.log('Admin already exists');
+      console.log('Admin exists or error:', err.message);
     }
   })
   .catch(err => {
@@ -59,27 +57,25 @@ mongoose.connect(process.env.MONGO_URI, {
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'Server Running',
-    timestamp: new Date(),
-    environment: process.env.NODE_ENV
+    timestamp: new Date()
   });
 });
 
-// Routes
+// Routes - IMPORTANT: Use /api prefix here
 app.use('/api', require('./routes/authRoutes'));
+
+// 404 Handler
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 // Error Handler
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
+  console.error('Error:', err.message);
   res.status(500).json({ message: err.message });
-});
-
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 API: ${process.env.CORS_ORIGIN || 'http://localhost:5000'}`);
+  console.log(`🚀 Server on port ${PORT}`);
 });

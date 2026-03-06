@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// LOGIN
+// LOGIN: POST /api/auth/login
 router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -30,11 +30,10 @@ router.post('/auth/login', async (req, res) => {
       });
     }
 
-    // Check approval for regular users
     if (user.role === 'user' && !user.isApproved) {
       return res.status(403).json({ 
         success: false,
-        message: 'Your account is pending admin approval. Please wait.'
+        message: 'Account pending approval' 
       });
     }
 
@@ -58,12 +57,12 @@ router.post('/auth/login', async (req, res) => {
     console.error('Login error:', err);
     res.status(500).json({ 
       success: false,
-      message: err.message 
+      message: 'Server error: ' + err.message 
     });
   }
 });
 
-// REGISTER
+// REGISTER: POST /api/auth/register
 router.post('/auth/register', async (req, res) => {
   try {
     const { name, email, password, mobile, userType } = req.body;
@@ -96,37 +95,31 @@ router.post('/auth/register', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Awaiting admin approval.',
+      message: 'Registration successful',
       token: newUser._id.toString(),
-      user: {
-        _id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role
-      }
+      user: newUser
     });
 
   } catch (error) {
     console.error('Register error:', error);
     res.status(400).json({ 
       success: false,
-      message: error.message 
+      message: 'Error: ' + error.message 
     });
   }
 });
 
-// GET ALL USERS (ADMIN)
+// GET USERS: GET /api/admin/users
 router.get('/admin/users', async (req, res) => {
   try {
     const users = await User.find({ role: 'user' }).select('-password');
     res.json(users);
   } catch (err) {
-    console.error('Error:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// APPROVE USER (ADMIN)
+// APPROVE: PUT /api/admin/approve/:id
 router.put('/admin/approve/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
@@ -150,20 +143,20 @@ router.put('/admin/approve/:id', async (req, res) => {
   }
 });
 
-// REJECT USER (ADMIN) - NEW
+// REJECT: PUT /api/admin/reject/:id
 router.put('/admin/reject/:id', async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ 
       success: true,
-      message: 'User rejected and deleted' 
+      message: 'User rejected' 
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// DELETE USER
+// DELETE: DELETE /api/user/:id
 router.delete('/user/:id', async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
