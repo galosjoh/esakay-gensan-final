@@ -1,551 +1,194 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { 
+  FaHome, FaCalculator, FaUser, FaBolt, FaCheck, FaTrash, FaMapMarkerAlt, 
+  FaRoute, FaShieldAlt, FaSignOutAlt, FaUsers, FaCar, FaBell, FaFileAlt, FaCreditCard 
+} from 'react-icons/fa';
 import './App.css';
 
 const API_URL = 'https://esakay-gensan-final.onrender.com/api';
 
-// LOGIN & REGISTER COMPONENT
+// --- SIDEBAR COMPONENT ---
+const WebSidebar = ({ user }) => {
+  const isAdmin = user?.role === 'admin';
+  return (
+    <div className="sidebar-web">
+      <div className="sidebar-logo"><FaBolt/> eSakay Portal</div>
+      <nav className="nav-container">
+        {isAdmin ? (
+          <>
+            <NavLink to="/admin" end className="nav-item"><FaHome/> Dashboard</NavLink>
+            <NavLink to="/admin/users" className="nav-item"><FaUsers/> User Approval</NavLink>
+            <NavLink to="/admin/drivers" className="nav-item"><FaCar/> Drivers List</NavLink>
+            <NavLink to="/admin/routes" className="nav-item"><FaRoute/> Routes</NavLink>
+          </>
+        ) : (
+          <>
+            <NavLink to="/home" className="nav-item"><FaHome/> My Home</NavLink>
+            <NavLink to="/fare" className="nav-item"><FaCalculator/> Fare Calculator</NavLink>
+            <NavLink to="/track" className="nav-item"><FaMapMarkerAlt/> Live Tracking</NavLink>
+          </>
+        )}
+        <NavLink to="/profile" className="nav-item"><FaUser/> My Profile</NavLink>
+      </nav>
+      <button className="logout-btn" onClick={() => { localStorage.clear(); window.location.href='/'; }}>
+        <FaSignOutAlt/> Logout
+      </button>
+    </div>
+  );
+};
+
+// --- LOGIN PAGE ---
 const Login = () => {
-  const [email, setEmail] = useState('admin@esakay.com');
-  const [password, setPassword] = useState('admin12345');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    mobile: '',
-    userType: 'user'
-  });
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+  const handleLogin = async () => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email,
-        password
-      });
-
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
-      if (response.data.user.role === 'admin') {
-        window.location.href = '/admin';
-      } else {
-        window.location.href = '/home';
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-      setLoading(false);
-    }
+      const res = await axios.post(`${API_URL}/login`, { email, password });
+      localStorage.setItem('esakay_current', JSON.stringify(res.data.user));
+      res.data.user.role === 'admin' ? navigate('/admin') : navigate('/home');
+    } catch (err) { setError(err.response?.data?.message || "Login failed"); }
   };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await axios.post(`${API_URL}/auth/register`, formData);
-      alert('✅ Registration successful! Wait for admin approval.');
-      setIsRegistering(false);
-      setFormData({ name: '', email: '', password: '', mobile: '', userType: 'user' });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-      setLoading(false);
-    }
-  };
-
-  if (isRegistering) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <h1>🚗 eSakay Gensan</h1>
-          <h2>Register</h2>
-          {error && <div style={styles.error}>{error}</div>}
-          <form onSubmit={handleRegister}>
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              style={styles.input}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              required
-              style={styles.input}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              required
-              style={styles.input}
-            />
-            <input
-              type="tel"
-              placeholder="Mobile"
-              value={formData.mobile}
-              onChange={(e) => setFormData({...formData, mobile: e.target.value})}
-              required
-              style={styles.input}
-            />
-            <select
-              value={formData.userType}
-              onChange={(e) => setFormData({...formData, userType: e.target.value})}
-              style={styles.input}
-            >
-              <option value="user">Passenger</option>
-              <option value="driver">Driver</option>
-            </select>
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? 'Registering...' : 'Register'}
-            </button>
-          </form>
-          <p style={styles.link}>
-            Have account? <button onClick={() => setIsRegistering(false)} style={{background: 'none', border: 'none', color: '#667eea', cursor: 'pointer'}}>Login</button>
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1>🚗 eSakay Gensan</h1>
-        <h2>Login</h2>
-        {error && <div style={styles.error}>{error}</div>}
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        <div style={styles.demo}>
-          <p><strong>Demo Admin:</strong></p>
-          <p>Email: admin@esakay.com</p>
-          <p>Password: admin12345</p>
-        </div>
-        <p style={styles.link}>
-          No account? <button onClick={() => setIsRegistering(true)} style={{background: 'none', border: 'none', color: '#667eea', cursor: 'pointer'}}>Register</button>
-        </p>
+    <div className="auth-full-page">
+      <div className="auth-card">
+        <FaBolt className="brand-logo"/>
+        <h2>Web Portal Login</h2>
+        {error && <p className="err-msg">{error}</p>}
+        <input className="web-input" type="email" placeholder="Email" onChange={e=>setEmail(e.target.value)}/>
+        <input className="web-input" type="password" placeholder="Password" onChange={e=>setPassword(e.target.value)}/>
+        <button className="btn-main" onClick={handleLogin}>Login to Dashboard</button>
+        <div style={{marginTop:'20px', fontSize:'14px'}}>No account? <span onClick={()=>navigate('/register')} style={{color:'blue', cursor:'pointer', fontWeight:'bold'}}>Register here</span></div>
       </div>
     </div>
   );
 };
 
-// ADMIN DASHBOARD
-const Admin = () => {
+// --- REGISTER PAGE ---
+const Register = () => {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ name: '', email: '', mobile: '', password: '' });
+  const handleReg = async () => {
+    try {
+      await axios.post(`${API_URL}/register`, form);
+      alert("Registration Success! Wait for Admin Approval.");
+      navigate('/');
+    } catch (err) { alert("Registration failed."); }
+  };
+  return (
+    <div className="auth-full-page">
+      <div className="auth-card">
+        <h2>Create Web Account</h2>
+        <input className="web-input" placeholder="Full Name" onChange={e=>setForm({...form, name:e.target.value})}/>
+        <input className="web-input" placeholder="Email" onChange={e=>setForm({...form, email:e.target.value})}/>
+        <input className="web-input" placeholder="Mobile" onChange={e=>setForm({...form, mobile:e.target.value})}/>
+        <input className="web-input" type="password" placeholder="Password" onChange={e=>setForm({...form, password:e.target.value})}/>
+        <button className="btn-main" onClick={handleReg}>Sign Up</button>
+        <p onClick={()=>navigate('/')} style={{marginTop:'15px', cursor:'pointer'}}>Back to Login</p>
+      </div>
+    </div>
+  );
+};
+
+// --- ADMIN DASHBOARD (FIGMA STYLE) ---
+const AdminHome = () => {
+  return (
+    <div className="web-layout">
+      <WebSidebar user={{role:'admin'}}/>
+      <main className="main-content">
+        <h1>Dashboard Overview</h1>
+        <div className="stats-grid">
+           <div className="stat-card"><span>Total Commuters</span> <h2>12,458</h2> <small style={{color:'green'}}>+12%</small></div>
+           <div className="stat-card"><span>Verified Drivers</span> <h2>342</h2> <small style={{color:'green'}}>+8%</small></div>
+           <div className="stat-card"><span>Active Vehicles</span> <h2>289</h2> <small style={{color:'blue'}}>Live</small></div>
+           <div className="stat-card"><span>SOS Alerts</span> <h2>3</h2> <small style={{color:'red'}}>Critical</small></div>
+        </div>
+        <div className="map-placeholder">
+           <FaMapMarkerAlt size={40} color="#2563eb"/>
+           <h3>Live Vehicle Map View</h3>
+           <p>Gensan Transportation Monitoring</p>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// --- ADMIN USER MANAGEMENT ---
+const AdminUsers = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
-  const [tab, setTab] = useState('pending');
+  const fetchUsers = async () => { const res = await axios.get(`${API_URL}/admin/users`); setUsers(res.data); };
+  useEffect(() => { fetchUsers(); }, []);
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) setUser(JSON.parse(userData));
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/admin/users`);
-      setUsers(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load users');
-      setLoading(false);
-    }
-  };
-
-  const handleApprove = async (userId) => {
-    try {
-      await axios.put(`${API_URL}/admin/approve/${userId}`);
-      alert('✅ User approved!');
-      fetchUsers();
-    } catch (err) {
-      alert('Error: ' + err.response?.data?.message);
-    }
-  };
-
-  const handleReject = async (userId) => {
-    if (window.confirm('Reject user?')) {
-      try {
-        await axios.put(`${API_URL}/admin/reject/${userId}`);
-        alert('✅ User rejected!');
-        fetchUsers();
-      } catch (err) {
-        alert('Error: ' + err.response?.data?.message);
-      }
-    }
-  };
-
-  const handleDelete = async (userId) => {
-    if (window.confirm('Delete user?')) {
-      try {
-        await axios.delete(`${API_URL}/user/${userId}`);
-        alert('✅ User deleted!');
-        fetchUsers();
-      } catch (err) {
-        alert('Error: ' + err.response?.data?.message);
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    if (window.confirm('Logout?')) {
-      localStorage.clear();
-      window.location.href = '/';
-    }
-  };
-
-  if (loading) return <div style={styles.container}>Loading...</div>;
-
-  const pending = users.filter(u => !u.isApproved);
-  const approved = users.filter(u => u.isApproved);
-  const displayUsers = tab === 'pending' ? pending : approved;
+  const approve = async (id) => { await axios.put(`${API_URL}/admin/approve/${id}`); fetchUsers(); };
+  const del = async (id) => { if(window.confirm("Delete account?")) { await axios.delete(`${API_URL}/user/${id}`); fetchUsers(); } };
 
   return (
-    <div style={styles.adminContainer}>
-      <div style={styles.header}>
-        <div>
-          <h1>👨‍💼 Admin Dashboard</h1>
-          <p>Welcome, {user?.name}!</p>
-        </div>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
-      </div>
-
-      {error && <div style={styles.error}>{error}</div>}
-
-      <div style={styles.admin}>
-        <div style={styles.tabs}>
-          <button
-            onClick={() => setTab('pending')}
-            style={{...styles.tab, backgroundColor: tab === 'pending' ? '#667eea' : '#e5e7eb', color: tab === 'pending' ? 'white' : 'black'}}
-          >
-            ⏳ Pending ({pending.length})
-          </button>
-          <button
-            onClick={() => setTab('approved')}
-            style={{...styles.tab, backgroundColor: tab === 'approved' ? '#667eea' : '#e5e7eb', color: tab === 'approved' ? 'white' : 'black'}}
-          >
-            ✅ Approved ({approved.length})
-          </button>
-        </div>
-
-        {displayUsers.length === 0 ? (
-          <p>No users</p>
-        ) : (
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.headerRow}>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Email</th>
-                <th style={styles.th}>Mobile</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
+    <div className="web-layout">
+      <WebSidebar user={{role:'admin'}}/>
+      <main className="main-content">
+        <h1>User Management</h1>
+        <div className="table-card">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
-              {displayUsers.map(u => (
-                <tr key={u._id} style={styles.row}>
-                  <td style={styles.td}>{u.name}</td>
-                  <td style={styles.td}>{u.email}</td>
-                  <td style={styles.td}>{u.mobile}</td>
-                  <td style={styles.td}>{u.role}</td>
-                  <td style={styles.td}>
-                    {tab === 'pending' ? (
-                      <>
-                        <button onClick={() => handleApprove(u._id)} style={styles.btnApprove}>✅ Approve</button>
-                        <button onClick={() => handleReject(u._id)} style={styles.btnReject}>❌ Reject</button>
-                      </>
-                    ) : (
-                      <button onClick={() => handleDelete(u._id)} style={styles.btnDelete}>🗑️ Delete</button>
-                    )}
+              {users.map(u => (
+                <tr key={u._id}>
+                  <td><b>{u.name}</b></td><td>{u.email}</td>
+                  <td><span className={`badge ${u.isApproved?'approved':'pending'}`}>{u.isApproved?'Approved':'Pending'}</span></td>
+                  <td>
+                    {!u.isApproved && <button className="btn-approve" onClick={()=>approve(u._id)}><FaCheck/> Approve</button>}
+                    <button className="btn-delete" onClick={()=>del(u._id)}><FaTrash/></button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
 
-// USER HOME
+// --- USER DASHBOARD ---
 const Home = () => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) setUser(JSON.parse(userData));
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
-
+  const [u, setU] = useState({});
+  useEffect(() => { setU(JSON.parse(localStorage.getItem('esakay_current')) || {}); }, []);
   return (
-    <div style={styles.homeContainer}>
-      <div style={styles.header}>
-        <div>
-          <h1>🚀 Welcome, {user?.name}!</h1>
-          <p>eSakay Gensan Smart Mobility</p>
-          {!user?.isApproved && <p style={{color: '#f59e0b'}}>⏳ Awaiting approval...</p>}
+    <div className="web-layout">
+      <WebSidebar user={u}/>
+      <main className="main-content">
+        <header style={{display:'flex', justifyContent:'space-between'}}>
+           <h1>Welcome, {u.name}!</h1>
+           <FaBell size={24} color="#666"/>
+        </header>
+        <div className="stats-grid" style={{marginTop:'30px'}}>
+           <div className="stat-card" style={{background:'#10b981', color:'white'}}><h3>Fare Calc</h3><p>Estimate trip cost</p></div>
+           <div className="stat-card" style={{background:'#3b82f6', color:'white'}}><h3>Tracking</h3><p>Locate vehicles</p></div>
         </div>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
-      </div>
-
-      {user?.isApproved ? (
-        <div style={styles.cardGrid}>
-          <div style={styles.card2}>
-            <h3>📍 Track Vehicle</h3>
-            <p>Real-time tracking</p>
-          </div>
-          <div style={styles.card2}>
-            <h3>💰 Calculate Fare</h3>
-            <p>Get fare estimates</p>
-          </div>
-          <div style={styles.card2}>
-            <h3>👤 My Profile</h3>
-            <p>Manage account</p>
-          </div>
-        </div>
-      ) : (
-        <div style={{padding: '40px', textAlign: 'center', background: '#fef3c7', borderRadius: '10px', margin: '40px auto', maxWidth: '500px'}}>
-          <h2>⏳ Under Review</h2>
-          <p>Your account is being reviewed. Check back soon!</p>
-        </div>
-      )}
+      </main>
     </div>
   );
 };
 
-// PROTECTED ROUTE
-const ProtectedRoute = ({ element, requiredRole = null }) => {
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
-
-  if (!user) return <Navigate to="/" />;
-  if (requiredRole && user.role !== requiredRole) return <Navigate to="/" />;
-
-  return element;
-};
-
-// STYLES
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '20px'
-  },
-  card: {
-    background: 'white',
-    padding: '40px',
-    borderRadius: '15px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-    width: '100%',
-    maxWidth: '400px'
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    margin: '10px 0',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    boxSizing: 'border-box',
-    fontSize: '14px'
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    margin: '20px 0 10px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: 'bold'
-  },
-  error: {
-    background: '#fee',
-    color: '#c33',
-    padding: '10px',
-    borderRadius: '8px',
-    marginBottom: '20px'
-  },
-  demo: {
-    background: '#f0f0f0',
-    padding: '15px',
-    borderRadius: '8px',
-    marginTop: '20px',
-    textAlign: 'center',
-    fontSize: '12px'
-  },
-  link: {
-    textAlign: 'center',
-    fontSize: '12px',
-    marginTop: '10px'
-  },
-
-  adminContainer: {
-    padding: '30px',
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '30px',
-    paddingBottom: '20px',
-    borderBottom: '2px solid #eee'
-  },
-  logoutBtn: {
-    padding: '10px 20px',
-    background: '#ef4444',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer'
-  },
-  admin: {
-    background: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  },
-  tabs: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '20px'
-  },
-  tab: {
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: 'bold'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
-  headerRow: {
-    background: '#f3f4f6',
-    borderBottom: '2px solid #e5e7eb'
-  },
-  th: {
-    padding: '12px',
-    textAlign: 'left',
-    fontWeight: '600'
-  },
-  row: {
-    borderBottom: '1px solid #e5e7eb'
-  },
-  td: {
-    padding: '12px'
-  },
-  btnApprove: {
-    marginRight: '5px',
-    padding: '6px 12px',
-    background: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
-  },
-  btnReject: {
-    marginRight: '5px',
-    padding: '6px 12px',
-    background: '#f59e0b',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
-  },
-  btnDelete: {
-    padding: '6px 12px',
-    background: '#ef4444',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px'
-  },
-
-  homeContainer: {
-    padding: '30px',
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
-    marginTop: '30px'
-  },
-  card2: {
-    background: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-  }
-};
-
-// MAIN APP
+// --- MAIN APP ---
 function App() {
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    setTimeout(() => setIsChecking(false), 100);
-  }, []);
-
-  if (isChecking) return null;
-
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/home" element={<ProtectedRoute element={<Home />} />} />
-      <Route path="/admin" element={<ProtectedRoute element={<Admin />} requiredRole="admin" />} />
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/admin" element={<AdminHome />} />
+      <Route path="/admin/users" element={<AdminUsers />} />
+      <Route path="/profile" element={<Home />} />
+      <Route path="/fare" element={<Home />} />
+      <Route path="/track" element={<Home />} />
     </Routes>
   );
 }
 
-export default () => <Router><App /></Router>;
+export default () => (<Router><App /></Router>);
